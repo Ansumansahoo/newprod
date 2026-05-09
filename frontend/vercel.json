@@ -1,0 +1,33 @@
+{
+  "version": 2,
+  "name": "chainmed-frontend",
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "https://chainmed-backend.up.railway.app/api/$1",
+      "headers": {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,PATCH,OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type,Authorization"
+      }
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ],
+  "env": {
+    "VITE_API_URL": "@chainmed_api_url",
+    "VITE_RPC_URL": "@chainmed_rpc_url",
+    "VITE_CONTRACT_ADDRESS": "@chainmed_contract_address"
+  }
+}
