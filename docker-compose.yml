@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: chainmed-postgres
+    environment:
+      POSTGRES_DB: chainmeddb
+      POSTGRES_USER: chainmed
+      POSTGRES_PASSWORD: chainmed123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/src/main/resources/db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - chainmed-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: chainmed-backend
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/chainmeddb
+      SPRING_DATASOURCE_USERNAME: chainmed
+      SPRING_DATASOURCE_PASSWORD: chainmed123
+      BLOCKCHAIN_RPC_URL: http://hardhat:8545
+      CONTRACT_ADDRESS: ${CONTRACT_ADDRESS:-0x5FbDB2315678afecb367f032d93F642f64180aa3}
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+    networks:
+      - chainmed-network
+
+  hardhat:
+    build:
+      context: ./blockchain
+      dockerfile: Dockerfile
+    container_name: chainmed-hardhat
+    ports:
+      - "8545:8545"
+    networks:
+      - chainmed-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: chainmed-frontend
+    environment:
+      VITE_API_URL: http://localhost:8080
+      VITE_RPC_URL: http://localhost:8545
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - chainmed-network
+
+volumes:
+  postgres_data:
+
+networks:
+  chainmed-network:
+    driver: bridge
