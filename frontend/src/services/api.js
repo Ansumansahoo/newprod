@@ -1,67 +1,38 @@
-import axios from 'axios';
+const API_BASE = import.meta.env.VITE_API_URL || 'https://chainmed-backend.up.railway.app';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080';
-
-const api = axios.create({
-  baseURL: `${API_BASE}/api`,
-  timeout: 15000,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
-
-// Request interceptor - add JWT token
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('chainmed_token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+async function request(path, options = {}) {
+  try {
+    const resp = await fetch(API_BASE + path, {
+      headers: { 'Content-Type': 'application/json', ...options.headers },
+      ...options
+    });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    return resp.json();
+  } catch (err) {
+    console.warn('API error:', path, err.message);
+    throw err;
   }
-  return config;
-});
+}
 
-// Response interceptor
-api.interceptors.response.use(
-  (response) => response.data,
-  (error) => {
-    console.error('API Error:', error.response?.data || error.message);
-    throw error;
-  }
-);
+export const api = {
+  // Products
+  getProducts: () => request('/api/products'),
+  getProduct: (id) => request('/api/products/' + id),
+  registerProduct: (data) => request('/api/products', { method: 'POST', body: JSON.stringify(data) }),
+  updateStatus: (id, status, data) => request('/api/products/' + id + '/status', { method: 'PUT', body: JSON.stringify({ status, ...data }) }),
+  trackProduct: (query) => request('/api/products/track?q=' + encodeURIComponent(query)),
+  searchProducts: (q) => request('/api/products/search?q=' + encodeURIComponent(q)),
 
-export const apiService = {
-  // ============ PRODUCTS ============
-  
-  getProducts: (params) => api.get('/products', { params }),
-  
-  getProduct: (id) => api.get(`/products/${id}`),
-  
-  getProductByBatch: (batchNumber) => api.get(`/products/batch/${batchNumber}`),
-  
-  createProduct: (data) => api.post('/products', data),
-  
-  updateStatus: (id, data) => api.patch(`/products/${id}/status`, data),
-  
-  getHistory: (id) => api.get(`/products/${id}/history`),
-  
-  verifyProduct: (id) => api.get(`/products/${id}/verify`),
-  
-  recallProduct: (id, reason) => api.post(`/products/${id}/recall`, { reason }),
-  
-  searchProducts: (params) => api.get('/products/search', { params }),
-  
-  getStats: () => api.get('/products/stats'),
-  
-  // ============ ACTORS ============
-  
-  getActors: () => api.get('/actors'),
-  
-  // ============ AUTH ============
-  
-  login: (credentials) => api.post('/auth/login', credentials),
-  
-  logout: () => {
-    localStorage.removeItem('chainmed_token');
-  },
+  // Events / History
+  getProductEvents: (id) => request('/api/products/' + id + '/history'),
+  addEvent: (id, event) => request('/api/products/' + id + '/events', { method: 'POST', body: JSON.stringify(event) }),
+
+  // Blockchain
+  getBlockchainTransactions: () => request('/api/blockchain/transactions'),
+  getBlockchainStats: () => request('/api/blockchain/stats'),
+  verifyProduct: (id) => request('/api/blockchain/verify/' + id),
+
+  // Stats
+  getStats: () => request('/api/stats'),
+  getDashboardStats: () => request('/api/stats/dashboard'),
 };
-
-export default api;
