@@ -1,15 +1,10 @@
 {
   "version": 2,
   "name": "chainmed-frontend",
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist"
-      }
-    }
-  ],
+  "framework": "vite",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "installCommand": "npm install",
   "routes": [
     {
       "src": "/api/(.*)",
@@ -24,10 +19,5 @@
       "src": "/(.*)",
       "dest": "/index.html"
     }
-  ],
-  "env": {
-    "VITE_API_URL": "@chainmed_api_url",
-    "VITE_RPC_URL": "@chainmed_rpc_url",
-    "VITE_CONTRACT_ADDRESS": "@chainmed_contract_address"
-  }
+  ]
 }
